@@ -1,0 +1,33 @@
+package persistence
+
+import (
+	"sync"
+
+	"github.com/fintech/cbpi/backend-go/internal/domain/portfolio"
+)
+
+type InMemoryPortfolioRepository struct {
+	mu    sync.RWMutex
+	store map[string]portfolio.Portfolio
+}
+
+func NewInMemoryPortfolioRepository() *InMemoryPortfolioRepository {
+	return &InMemoryPortfolioRepository{store: map[string]portfolio.Portfolio{}}
+}
+
+func (r *InMemoryPortfolioRepository) Save(p portfolio.Portfolio) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.store[p.ID] = p
+	return nil
+}
+
+func (r *InMemoryPortfolioRepository) FindByID(id string) (*portfolio.Portfolio, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	p, ok := r.store[id]
+	if !ok {
+		return nil, portfolio.ErrNotFound
+	}
+	return &p, nil
+}

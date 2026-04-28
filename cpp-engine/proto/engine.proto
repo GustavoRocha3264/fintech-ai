@@ -1,0 +1,6 @@
+// Symlink-equivalent: the canonical proto lives in /proto/engine.proto.
+// Build scripts should compile from the root /proto directory so backend-go
+// and cpp-engine stay in sync.
+syntax = "proto3";
+package cbpi.engine.v1;
+// See ../../proto/engine.proto for the authoritative service definition.

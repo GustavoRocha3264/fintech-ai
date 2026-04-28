@@ -1,0 +1,27 @@
+# Go
+backend-go/bin/
+backend-go/vendor/
+*.test
+*.out
+
+# C++
+cpp-engine/build/
+*.o
+*.obj
+
+# Node / frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Python
+ai-service/__pycache__/
+ai-service/**/__pycache__/
+ai-service/.pytest_cache/
+ai-service/.venv/
+*.pyc
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/

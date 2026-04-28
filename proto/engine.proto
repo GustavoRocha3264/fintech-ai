@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package cbpi.engine.v1;
+
+option go_package = "github.com/fintech/cbpi/backend-go/internal/infrastructure/grpc/pb;pb";
+
+service Engine {
+  rpc SimulatePortfolio (SimulateRequest) returns (SimulateResponse);
+  rpc CalculateRisk     (RiskRequest)     returns (RiskResponse);
+  rpc OptimizeAllocation(OptimizeRequest) returns (OptimizeResponse);
+}
+
+message Holding {
+  string asset_id = 1;
+  double quantity = 2;
+  double price    = 3;
+  string currency = 4;
+}
+
+message SimulateRequest {
+  string portfolio_id = 1;
+  repeated Holding holdings = 2;
+  int32 horizon_days = 3;
+  int32 monte_carlo_runs = 4;
+}
+
+message SimulateResponse {
+  double expected_return = 1;
+  double std_dev = 2;
+  repeated double percentile_paths = 3;
+}
+
+message RiskRequest {
+  string portfolio_id = 1;
+  repeated Holding holdings = 2;
+}
+
+message RiskResponse {
+  double volatility = 1;
+  double beta = 2;
+  double var_95 = 3;
+  double sharpe = 4;
+}
+
+message OptimizeRequest {
+  string portfolio_id = 1;
+  repeated Holding holdings = 2;
+  double target_return = 3;
+}
+
+message Suggestion {
+  string asset_id = 1;
+  double current_weight = 2;
+  double target_weight = 3;
+  string rationale = 4;
+}
+
+message OptimizeResponse {
+  repeated Suggestion suggestions = 1;
+}

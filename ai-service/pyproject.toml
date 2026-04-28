@@ -1,0 +1,16 @@
+[project]
+name = "cbpi-ai-service"
+version = "0.0.1"
+description = "AI/LLM microservice for portfolio narrative generation"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.110",
+  "uvicorn[standard]>=0.29",
+  "pydantic>=2.6",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "httpx>=0.27"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
