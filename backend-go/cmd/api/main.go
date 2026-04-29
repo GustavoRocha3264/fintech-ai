@@ -44,10 +44,11 @@ func main() {
 	portfolioHandler := handlers.NewPortfolioHandler(createUC, getUC, addPosUC, getValuedUC)
 	analysisHandler := handlers.NewAnalysisHandler(runAnalysisUC, latestAnalysisUC)
 	snapshotHandler := handlers.NewSnapshotHandler(historyUC)
+	fxHandler := handlers.NewFXHandler(fxProvider)
 
 	srv := &http.Server{
 		Addr:              addr,
-		Handler:           httpiface.NewRouter(portfolioHandler, analysisHandler, snapshotHandler),
+		Handler:           httpiface.NewRouter(portfolioHandler, analysisHandler, snapshotHandler, fxHandler),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
