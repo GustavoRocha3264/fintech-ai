@@ -18,9 +18,10 @@ func TestSnapshotsCapturedAfterAnalysis(t *testing.T) {
 	marketProv := market.NewStubMarketDataProvider()
 	fxProv := fx.NewStubFXRateProvider()
 
+	val := apportfolio.NewValuationService(marketProv, fxProv)
 	create := apportfolio.NewCreatePortfolio(portRepo)
 	add := apportfolio.NewAddPosition(portRepo)
-	run := apanalysis.NewRunAnalysis(portRepo, analysisRepo, snapshotRepo, marketProv, fxProv)
+	run := apanalysis.NewRunAnalysis(portRepo, analysisRepo, snapshotRepo, val)
 	history := apsnapshot.NewGetHistory(snapshotRepo)
 
 	p, err := create.Execute("USD")

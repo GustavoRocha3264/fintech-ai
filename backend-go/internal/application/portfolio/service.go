@@ -73,13 +73,12 @@ type PortfolioView struct {
 }
 
 type GetPortfolioWithValuation struct {
-	repo   portfolio.Repository
-	market portfolio.MarketDataProvider
-	fx     portfolio.FXRateProvider
+	repo      portfolio.Repository
+	valuation ValuationService
 }
 
-func NewGetPortfolioWithValuation(r portfolio.Repository, m portfolio.MarketDataProvider, f portfolio.FXRateProvider) *GetPortfolioWithValuation {
-	return &GetPortfolioWithValuation{repo: r, market: m, fx: f}
+func NewGetPortfolioWithValuation(r portfolio.Repository, v ValuationService) *GetPortfolioWithValuation {
+	return &GetPortfolioWithValuation{repo: r, valuation: v}
 }
 
 func (uc *GetPortfolioWithValuation) Execute(id string) (*PortfolioView, error) {
@@ -87,17 +86,9 @@ func (uc *GetPortfolioWithValuation) Execute(id string) (*PortfolioView, error) 
 	if err != nil {
 		return nil, err
 	}
-	prices := make(map[string]portfolio.Money, len(p.Positions))
-	for _, pos := range p.Positions {
-		price, currency, err := uc.market.GetPrice(pos.Symbol)
-		if err != nil {
-			return nil, err
-		}
-		prices[pos.Symbol] = portfolio.NewMoney(price, currency)
-	}
-	rate, err := uc.fx.GetRate(portfolio.CurrencyUSD, portfolio.CurrencyBRL)
+	res, err := uc.valuation.Calculate(*p)
 	if err != nil {
 		return nil, err
 	}
-	return &PortfolioView{Portfolio: p, Valuation: portfolio.Valuate(p.Positions, prices, rate)}, nil
+	return &PortfolioView{Portfolio: p, Valuation: res.Valuation}, nil
 }
