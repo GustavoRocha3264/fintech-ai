@@ -21,12 +21,17 @@ import (
 
 func main() {
 	addr := envOr("HTTP_ADDR", ":8080")
+	fxAPIURL := envOr("FX_API_URL", "https://open.er-api.com/v6/latest")
+	fxTTL := envDurationOr("FX_CACHE_TTL", 5*time.Minute)
 
 	portfolioRepo := persistence.NewInMemoryPortfolioRepository()
 	analysisRepo := persistence.NewInMemoryAnalysisRepository()
 	snapshotRepo := persistence.NewInMemorySnapshotRepository()
 	marketProvider := market.NewStubMarketDataProvider()
-	fxProvider := fx.NewStubFXRateProvider()
+	fxProvider := fx.NewFallback(
+		fx.NewHTTPProvider(fxAPIURL, fxTTL),
+		fx.NewStubFXRateProvider(),
+	)
 
 	createUC := apportfolio.NewCreatePortfolio(portfolioRepo)
 	getUC := apportfolio.NewGetPortfolio(portfolioRepo)
@@ -65,6 +70,15 @@ func main() {
 func envOr(k, def string) string {
 	if v := os.Getenv(k); v != "" {
 		return v
+	}
+	return def
+}
+
+func envDurationOr(k string, def time.Duration) time.Duration {
+	if v := os.Getenv(k); v != "" {
+		if d, err := time.ParseDuration(v); err == nil {
+			return d
+		}
 	}
 	return def
 }
