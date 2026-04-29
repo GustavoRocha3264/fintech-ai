@@ -8,7 +8,12 @@ import (
 	"github.com/fintech/cbpi/backend-go/internal/interfaces/http/handlers"
 )
 
-func NewRouter(ph *handlers.PortfolioHandler, ah *handlers.AnalysisHandler, sh *handlers.SnapshotHandler) http.Handler {
+func NewRouter(
+	ph *handlers.PortfolioHandler,
+	ah *handlers.AnalysisHandler,
+	sh *handlers.SnapshotHandler,
+	fh *handlers.FXHandler,
+) http.Handler {
 	r := gin.New()
 	r.Use(gin.Recovery(), gin.Logger())
 
@@ -23,6 +28,7 @@ func NewRouter(ph *handlers.PortfolioHandler, ah *handlers.AnalysisHandler, sh *
 		api.POST("/portfolios/:id/analysis", ah.Run)
 		api.GET("/portfolios/:id/analysis/latest", ah.Latest)
 		api.GET("/portfolios/:id/snapshots", sh.History)
+		api.GET("/fx/:from/:to", fh.Get)
 	}
 
 	return r
