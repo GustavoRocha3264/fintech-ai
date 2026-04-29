@@ -12,10 +12,10 @@ import (
 )
 
 type PortfolioHandler struct {
-	create     *apportfolio.CreatePortfolio
-	get        *apportfolio.GetPortfolio
-	addPos     *apportfolio.AddPosition
-	getValued  *apportfolio.GetPortfolioWithValuation
+	create    *apportfolio.CreatePortfolio
+	get       *apportfolio.GetPortfolio
+	addPos    *apportfolio.AddPosition
+	getValued *apportfolio.GetPortfolioWithValuation
 }
 
 func NewPortfolioHandler(
@@ -42,7 +42,7 @@ func (h *PortfolioHandler) Create(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, toPortfolioResponse(p))
+	c.JSON(http.StatusCreated, dto.NewPortfolioResponse(p))
 }
 
 func (h *PortfolioHandler) Get(c *gin.Context) {
@@ -51,7 +51,7 @@ func (h *PortfolioHandler) Get(c *gin.Context) {
 		writeRepoError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, toPortfolioResponse(p))
+	c.JSON(http.StatusOK, dto.NewPortfolioResponse(p))
 }
 
 func (h *PortfolioHandler) AddPosition(c *gin.Context) {
@@ -82,7 +82,7 @@ func (h *PortfolioHandler) AddPosition(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, toPositionResponse(*pos))
+	c.JSON(http.StatusCreated, dto.NewPositionResponse(*pos))
 }
 
 func (h *PortfolioHandler) GetWithValuation(c *gin.Context) {
@@ -91,16 +91,7 @@ func (h *PortfolioHandler) GetWithValuation(c *gin.Context) {
 		writeRepoError(c, err)
 		return
 	}
-	resp := dto.PortfolioWithValuationResponse{
-		PortfolioResponse: toPortfolioResponse(view.Portfolio),
-		Valuation: dto.ValuationResponse{
-			TotalBRL:     dto.MoneyResponse{Amount: view.Valuation.TotalBRL.Amount, Currency: view.Valuation.TotalBRL.Currency},
-			TotalUSD:     dto.MoneyResponse{Amount: view.Valuation.TotalUSD.Amount, Currency: view.Valuation.TotalUSD.Currency},
-			PercentInBRL: view.Valuation.PercentInBRL,
-			PercentInUSD: view.Valuation.PercentInUSD,
-		},
-	}
-	c.JSON(http.StatusOK, resp)
+	c.JSON(http.StatusOK, dto.NewPortfolioWithValuationResponse(view))
 }
 
 func writeRepoError(c *gin.Context, err error) {
@@ -109,27 +100,4 @@ func writeRepoError(c *gin.Context, err error) {
 		return
 	}
 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-}
-
-func toPortfolioResponse(p *portfolio.Portfolio) dto.PortfolioResponse {
-	positions := make([]dto.PositionResponse, 0, len(p.Positions))
-	for _, pos := range p.Positions {
-		positions = append(positions, toPositionResponse(pos))
-	}
-	return dto.PortfolioResponse{
-		ID:           p.ID,
-		BaseCurrency: p.BaseCurrency,
-		CreatedAt:    p.CreatedAt,
-		Positions:    positions,
-	}
-}
-
-func toPositionResponse(p portfolio.Position) dto.PositionResponse {
-	return dto.PositionResponse{
-		ID:       p.ID,
-		Symbol:   p.Symbol,
-		Quantity: p.Quantity,
-		Price:    p.Price,
-		Currency: p.Currency,
-	}
 }
