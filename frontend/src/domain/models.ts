@@ -1,6 +1,6 @@
 export type Currency = 'BRL' | 'USD';
 
-export interface PositionResponse {
+export interface Position {
   id: string;
   symbol: string;
   quantity: number;
@@ -8,31 +8,31 @@ export interface PositionResponse {
   currency: Currency;
 }
 
-export interface PortfolioResponse {
+export interface Portfolio {
   id: string;
   baseCurrency: Currency;
   createdAt: string;
-  positions: PositionResponse[];
+  positions: Position[];
 }
 
-export interface MoneyResponse {
+export interface Money {
   amount: number;
   currency: Currency;
 }
 
-export interface ValuationResponse {
-  totalBRL: MoneyResponse;
-  totalUSD: MoneyResponse;
+export interface Valuation {
+  totalBRL: Money;
+  totalUSD: Money;
   percentInBRL: number;
   percentInUSD: number;
 }
 
-export interface PortfolioWithValuationResponse {
-  portfolio: PortfolioResponse;
-  valuation: ValuationResponse;
+export interface PortfolioWithValuation {
+  portfolio: Portfolio;
+  valuation: Valuation;
 }
 
-export interface AnalysisResponse {
+export interface AnalysisReport {
   id: string;
   portfolioId: string;
   createdAt: string;
@@ -44,7 +44,7 @@ export interface AnalysisResponse {
   insights: string[];
 }
 
-export interface SnapshotResponse {
+export interface PortfolioSnapshot {
   id: string;
   portfolioId: string;
   timestamp: string;
@@ -52,30 +52,30 @@ export interface SnapshotResponse {
   totalValueUSD: number;
 }
 
-export interface FXResponse {
+export interface FXRate {
   from: string;
   to: string;
   rate: number;
 }
 
-export interface DashboardFXResponse {
+export interface DashboardFX {
   usdToBRL: number;
   brlToUSD: number;
 }
 
-export interface DashboardResponse {
-  portfolio: PortfolioResponse;
-  valuation: ValuationResponse;
-  latestReport: AnalysisResponse | null;
-  snapshots: SnapshotResponse[];
-  fx: DashboardFXResponse;
+export interface Dashboard {
+  portfolio: Portfolio;
+  valuation: Valuation;
+  latestReport: AnalysisReport | null;
+  snapshots: PortfolioSnapshot[];
+  fx: DashboardFX;
 }
 
-export interface CreatePortfolioRequest {
+export interface CreatePortfolioInput {
   baseCurrency: Currency;
 }
 
-export interface AddPositionRequest {
+export interface AddPositionInput {
   symbol: string;
   quantity: number;
   price: number;
