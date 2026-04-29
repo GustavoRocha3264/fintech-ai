@@ -8,6 +8,20 @@ import (
 	"github.com/fintech/cbpi/backend-go/internal/interfaces/http/handlers"
 )
 
+func corsMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		if c.Request.Method == http.MethodOptions {
+			c.AbortWithStatus(http.StatusNoContent)
+			return
+		}
+		c.Next()
+	}
+}
+
 func NewRouter(
 	ph *handlers.PortfolioHandler,
 	ah *handlers.AnalysisHandler,
@@ -16,7 +30,7 @@ func NewRouter(
 	dh *handlers.DashboardHandler,
 ) http.Handler {
 	r := gin.New()
-	r.Use(gin.Recovery(), gin.Logger())
+	r.Use(gin.Recovery(), gin.Logger(), corsMiddleware())
 
 	r.GET("/healthz", func(c *gin.Context) { c.JSON(200, gin.H{"status": "ok"}) })
 
