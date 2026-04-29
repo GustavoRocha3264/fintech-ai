@@ -18,6 +18,8 @@ func NewRouter(ph *handlers.PortfolioHandler) http.Handler {
 	{
 		api.POST("/portfolios", ph.Create)
 		api.GET("/portfolios/:id", ph.Get)
+		api.POST("/portfolios/:id/positions", ph.AddPosition)
+		api.GET("/portfolios/:id/valuation", ph.GetWithValuation)
 	}
 
 	return r

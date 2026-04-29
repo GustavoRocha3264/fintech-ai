@@ -12,12 +12,19 @@ import (
 )
 
 type PortfolioHandler struct {
-	create *apportfolio.CreatePortfolio
-	get    *apportfolio.GetPortfolio
+	create     *apportfolio.CreatePortfolio
+	get        *apportfolio.GetPortfolio
+	addPos     *apportfolio.AddPosition
+	getValued  *apportfolio.GetPortfolioWithValuation
 }
 
-func NewPortfolioHandler(create *apportfolio.CreatePortfolio, get *apportfolio.GetPortfolio) *PortfolioHandler {
-	return &PortfolioHandler{create: create, get: get}
+func NewPortfolioHandler(
+	create *apportfolio.CreatePortfolio,
+	get *apportfolio.GetPortfolio,
+	addPos *apportfolio.AddPosition,
+	getValued *apportfolio.GetPortfolioWithValuation,
+) *PortfolioHandler {
+	return &PortfolioHandler{create: create, get: get, addPos: addPos, getValued: getValued}
 }
 
 func (h *PortfolioHandler) Create(c *gin.Context) {
@@ -35,26 +42,94 @@ func (h *PortfolioHandler) Create(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, toResponse(p))
+	c.JSON(http.StatusCreated, toPortfolioResponse(p))
 }
 
 func (h *PortfolioHandler) Get(c *gin.Context) {
 	p, err := h.get.Execute(c.Param("id"))
 	if err != nil {
+		writeRepoError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, toPortfolioResponse(p))
+}
+
+func (h *PortfolioHandler) AddPosition(c *gin.Context) {
+	var req dto.AddPositionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	pos, err := h.addPos.Execute(apportfolio.AddPositionInput{
+		PortfolioID: c.Param("id"),
+		Symbol:      req.Symbol,
+		Quantity:    req.Quantity,
+		Price:       req.Price,
+		Currency:    req.Currency,
+	})
+	if err != nil {
 		if errors.Is(err, portfolio.ErrNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+		if errors.Is(err, portfolio.ErrInvalidPositionCurrency) ||
+			errors.Is(err, portfolio.ErrInvalidQuantity) ||
+			errors.Is(err, portfolio.ErrInvalidPrice) ||
+			errors.Is(err, portfolio.ErrEmptySymbol) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, toResponse(p))
+	c.JSON(http.StatusCreated, toPositionResponse(*pos))
 }
 
-func toResponse(p *portfolio.Portfolio) dto.PortfolioResponse {
+func (h *PortfolioHandler) GetWithValuation(c *gin.Context) {
+	view, err := h.getValued.Execute(c.Param("id"))
+	if err != nil {
+		writeRepoError(c, err)
+		return
+	}
+	resp := dto.PortfolioWithValuationResponse{
+		PortfolioResponse: toPortfolioResponse(view.Portfolio),
+		Valuation: dto.ValuationResponse{
+			TotalBRL:     dto.MoneyResponse{Amount: view.Valuation.TotalBRL.Amount, Currency: view.Valuation.TotalBRL.Currency},
+			TotalUSD:     dto.MoneyResponse{Amount: view.Valuation.TotalUSD.Amount, Currency: view.Valuation.TotalUSD.Currency},
+			PercentInBRL: view.Valuation.PercentInBRL,
+			PercentInUSD: view.Valuation.PercentInUSD,
+		},
+	}
+	c.JSON(http.StatusOK, resp)
+}
+
+func writeRepoError(c *gin.Context, err error) {
+	if errors.Is(err, portfolio.ErrNotFound) {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+}
+
+func toPortfolioResponse(p *portfolio.Portfolio) dto.PortfolioResponse {
+	positions := make([]dto.PositionResponse, 0, len(p.Positions))
+	for _, pos := range p.Positions {
+		positions = append(positions, toPositionResponse(pos))
+	}
 	return dto.PortfolioResponse{
 		ID:           p.ID,
 		BaseCurrency: p.BaseCurrency,
 		CreatedAt:    p.CreatedAt,
+		Positions:    positions,
+	}
+}
+
+func toPositionResponse(p portfolio.Position) dto.PositionResponse {
+	return dto.PositionResponse{
+		ID:       p.ID,
+		Symbol:   p.Symbol,
+		Quantity: p.Quantity,
+		Price:    p.Price,
+		Currency: p.Currency,
 	}
 }
