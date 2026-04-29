@@ -13,6 +13,9 @@ cpp-engine/build/
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
+frontend/tsconfig.tsbuildinfo
+frontend/src/**/*.js
+frontend/src/**/*.js.map
 
 # Python
 ai-service/__pycache__/
