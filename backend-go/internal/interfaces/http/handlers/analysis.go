@@ -34,7 +34,7 @@ type analysisResponse struct {
 }
 
 func (h *AnalysisHandler) Run(c *gin.Context) {
-	report, err := h.run.Execute(c.Param("id"))
+	report, err := h.run.Execute(c.Request.Context(), c.Param("id"))
 	if err != nil {
 		if errors.Is(err, portfolio.ErrNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})

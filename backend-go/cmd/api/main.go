@@ -16,6 +16,7 @@ import (
 	"github.com/fintech/cbpi/backend-go/internal/infrastructure/fx"
 	"github.com/fintech/cbpi/backend-go/internal/infrastructure/market"
 	"github.com/fintech/cbpi/backend-go/internal/infrastructure/persistence"
+	infrauow "github.com/fintech/cbpi/backend-go/internal/infrastructure/uow"
 	httpiface "github.com/fintech/cbpi/backend-go/internal/interfaces/http"
 	"github.com/fintech/cbpi/backend-go/internal/interfaces/http/handlers"
 )
@@ -35,12 +36,13 @@ func main() {
 	)
 
 	valuationSvc := apportfolio.NewValuationService(marketProvider, fxProvider)
+	unitOfWork := infrauow.NewInMemoryUoW(portfolioRepo, analysisRepo, snapshotRepo)
 
 	createUC := apportfolio.NewCreatePortfolio(portfolioRepo)
 	getUC := apportfolio.NewGetPortfolio(portfolioRepo)
 	addPosUC := apportfolio.NewAddPosition(portfolioRepo)
 	getValuedUC := apportfolio.NewGetPortfolioWithValuation(portfolioRepo, valuationSvc)
-	runAnalysisUC := apanalysis.NewRunAnalysis(portfolioRepo, analysisRepo, snapshotRepo, valuationSvc)
+	runAnalysisUC := apanalysis.NewRunAnalysis(unitOfWork, valuationSvc)
 	latestAnalysisUC := apanalysis.NewGetLatestAnalysis(analysisRepo)
 	historyUC := apsnapshot.NewGetHistory(snapshotRepo)
 	dashboardUC := dashboard.NewGetDashboard(portfolioRepo, valuationSvc, analysisRepo, snapshotRepo, fxProvider)

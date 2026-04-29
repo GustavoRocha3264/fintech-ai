@@ -31,3 +31,25 @@ func (r *InMemoryPortfolioRepository) FindByID(id string) (*portfolio.Portfolio,
 	}
 	return &p, nil
 }
+
+// Snapshot returns a deep copy of the current state. Used by the in-memory
+// UoW to support rollback on transaction failure.
+func (r *InMemoryPortfolioRepository) Snapshot() map[string]portfolio.Portfolio {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	out := make(map[string]portfolio.Portfolio, len(r.store))
+	for k, v := range r.store {
+		positions := make([]portfolio.Position, len(v.Positions))
+		copy(positions, v.Positions)
+		v.Positions = positions
+		out[k] = v
+	}
+	return out
+}
+
+// Restore overwrites the current state with the supplied snapshot.
+func (r *InMemoryPortfolioRepository) Restore(snap map[string]portfolio.Portfolio) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.store = snap
+}
