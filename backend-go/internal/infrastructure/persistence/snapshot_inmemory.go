@@ -34,3 +34,21 @@ func (r *InMemorySnapshotRepository) FindByPortfolioID(portfolioID string) ([]sn
 	sort.Slice(out, func(i, j int) bool { return out[i].Timestamp.Before(out[j].Timestamp) })
 	return out, nil
 }
+
+func (r *InMemorySnapshotRepository) Snapshot() map[string][]snapshot.PortfolioSnapshot {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	out := make(map[string][]snapshot.PortfolioSnapshot, len(r.byPort))
+	for k, v := range r.byPort {
+		cp := make([]snapshot.PortfolioSnapshot, len(v))
+		copy(cp, v)
+		out[k] = cp
+	}
+	return out
+}
+
+func (r *InMemorySnapshotRepository) Restore(snap map[string][]snapshot.PortfolioSnapshot) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.byPort = snap
+}

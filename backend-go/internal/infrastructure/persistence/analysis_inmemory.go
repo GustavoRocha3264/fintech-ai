@@ -34,3 +34,22 @@ func (r *InMemoryAnalysisRepository) GetLatestByPortfolioID(portfolioID string) 
 	}
 	return &rep, nil
 }
+
+func (r *InMemoryAnalysisRepository) Snapshot() map[string]analysis.AnalysisReport {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	out := make(map[string]analysis.AnalysisReport, len(r.latest))
+	for k, v := range r.latest {
+		insights := make([]string, len(v.Insights))
+		copy(insights, v.Insights)
+		v.Insights = insights
+		out[k] = v
+	}
+	return out
+}
+
+func (r *InMemoryAnalysisRepository) Restore(snap map[string]analysis.AnalysisReport) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.latest = snap
+}
