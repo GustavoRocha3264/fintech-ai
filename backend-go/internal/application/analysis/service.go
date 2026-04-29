@@ -3,17 +3,25 @@ package analysis
 import (
 	"github.com/fintech/cbpi/backend-go/internal/domain/analysis"
 	"github.com/fintech/cbpi/backend-go/internal/domain/portfolio"
+	"github.com/fintech/cbpi/backend-go/internal/domain/snapshot"
 )
 
 type RunAnalysis struct {
 	portfolios portfolio.Repository
 	reports    analysis.Repository
+	snapshots  snapshot.Repository
 	market     portfolio.MarketDataProvider
 	fx         portfolio.FXRateProvider
 }
 
-func NewRunAnalysis(p portfolio.Repository, r analysis.Repository, m portfolio.MarketDataProvider, f portfolio.FXRateProvider) *RunAnalysis {
-	return &RunAnalysis{portfolios: p, reports: r, market: m, fx: f}
+func NewRunAnalysis(
+	p portfolio.Repository,
+	r analysis.Repository,
+	s snapshot.Repository,
+	m portfolio.MarketDataProvider,
+	f portfolio.FXRateProvider,
+) *RunAnalysis {
+	return &RunAnalysis{portfolios: p, reports: r, snapshots: s, market: m, fx: f}
 }
 
 func (uc *RunAnalysis) Execute(portfolioID string) (*analysis.AnalysisReport, error) {
@@ -52,11 +60,12 @@ func (uc *RunAnalysis) Execute(portfolioID string) (*analysis.AnalysisReport, er
 	if err := uc.reports.Save(*report); err != nil {
 		return nil, err
 	}
+	if err := uc.snapshots.Save(*snapshot.New(p.ID, v.TotalBRL.Amount, v.TotalUSD.Amount)); err != nil {
+		return nil, err
+	}
 	return report, nil
 }
 
-// topAssetConcentration returns the largest single position's share of the
-// portfolio's total value. Cross-currency positions are normalized to BRL.
 func topAssetConcentration(positions []portfolio.Position, prices map[string]portfolio.Money, fxRate float64) float64 {
 	var total, top float64
 	for _, pos := range positions {

@@ -16,12 +16,13 @@ import (
 func TestRunAnalysis_GeneratesReportAndStoresIt(t *testing.T) {
 	portRepo := persistence.NewInMemoryPortfolioRepository()
 	analysisRepo := persistence.NewInMemoryAnalysisRepository()
+	snapshotRepo := persistence.NewInMemorySnapshotRepository()
 	marketProv := market.NewStubMarketDataProvider()
 	fxProv := fx.NewStubFXRateProvider()
 
 	create := apportfolio.NewCreatePortfolio(portRepo)
 	add := apportfolio.NewAddPosition(portRepo)
-	run := apanalysis.NewRunAnalysis(portRepo, analysisRepo, marketProv, fxProv)
+	run := apanalysis.NewRunAnalysis(portRepo, analysisRepo, snapshotRepo, marketProv, fxProv)
 	latest := apanalysis.NewGetLatestAnalysis(analysisRepo)
 
 	p, err := create.Execute("USD")
@@ -65,7 +66,8 @@ func TestRunAnalysis_GeneratesReportAndStoresIt(t *testing.T) {
 func TestRunAnalysis_PortfolioNotFound(t *testing.T) {
 	portRepo := persistence.NewInMemoryPortfolioRepository()
 	analysisRepo := persistence.NewInMemoryAnalysisRepository()
-	run := apanalysis.NewRunAnalysis(portRepo, analysisRepo, market.NewStubMarketDataProvider(), fx.NewStubFXRateProvider())
+	snapshotRepo := persistence.NewInMemorySnapshotRepository()
+	run := apanalysis.NewRunAnalysis(portRepo, analysisRepo, snapshotRepo, market.NewStubMarketDataProvider(), fx.NewStubFXRateProvider())
 
 	_, err := run.Execute("missing")
 	if !errors.Is(err, portfolio.ErrNotFound) {
