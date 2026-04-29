@@ -10,6 +10,7 @@ import (
 	"time"
 
 	apanalysis "github.com/fintech/cbpi/backend-go/internal/application/analysis"
+	"github.com/fintech/cbpi/backend-go/internal/application/dashboard"
 	apportfolio "github.com/fintech/cbpi/backend-go/internal/application/portfolio"
 	apsnapshot "github.com/fintech/cbpi/backend-go/internal/application/snapshot"
 	"github.com/fintech/cbpi/backend-go/internal/infrastructure/fx"
@@ -33,22 +34,26 @@ func main() {
 		fx.NewStubFXRateProvider(),
 	)
 
+	valuationSvc := apportfolio.NewValuationService(marketProvider, fxProvider)
+
 	createUC := apportfolio.NewCreatePortfolio(portfolioRepo)
 	getUC := apportfolio.NewGetPortfolio(portfolioRepo)
 	addPosUC := apportfolio.NewAddPosition(portfolioRepo)
-	getValuedUC := apportfolio.NewGetPortfolioWithValuation(portfolioRepo, marketProvider, fxProvider)
-	runAnalysisUC := apanalysis.NewRunAnalysis(portfolioRepo, analysisRepo, snapshotRepo, marketProvider, fxProvider)
+	getValuedUC := apportfolio.NewGetPortfolioWithValuation(portfolioRepo, valuationSvc)
+	runAnalysisUC := apanalysis.NewRunAnalysis(portfolioRepo, analysisRepo, snapshotRepo, valuationSvc)
 	latestAnalysisUC := apanalysis.NewGetLatestAnalysis(analysisRepo)
 	historyUC := apsnapshot.NewGetHistory(snapshotRepo)
+	dashboardUC := dashboard.NewGetDashboard(portfolioRepo, valuationSvc, analysisRepo, snapshotRepo, fxProvider)
 
 	portfolioHandler := handlers.NewPortfolioHandler(createUC, getUC, addPosUC, getValuedUC)
 	analysisHandler := handlers.NewAnalysisHandler(runAnalysisUC, latestAnalysisUC)
 	snapshotHandler := handlers.NewSnapshotHandler(historyUC)
 	fxHandler := handlers.NewFXHandler(fxProvider)
+	dashboardHandler := handlers.NewDashboardHandler(dashboardUC)
 
 	srv := &http.Server{
 		Addr:              addr,
-		Handler:           httpiface.NewRouter(portfolioHandler, analysisHandler, snapshotHandler, fxHandler),
+		Handler:           httpiface.NewRouter(portfolioHandler, analysisHandler, snapshotHandler, fxHandler, dashboardHandler),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 

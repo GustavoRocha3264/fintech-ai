@@ -13,6 +13,7 @@ func NewRouter(
 	ah *handlers.AnalysisHandler,
 	sh *handlers.SnapshotHandler,
 	fh *handlers.FXHandler,
+	dh *handlers.DashboardHandler,
 ) http.Handler {
 	r := gin.New()
 	r.Use(gin.Recovery(), gin.Logger())
@@ -28,6 +29,7 @@ func NewRouter(
 		api.POST("/portfolios/:id/analysis", ah.Run)
 		api.GET("/portfolios/:id/analysis/latest", ah.Latest)
 		api.GET("/portfolios/:id/snapshots", sh.History)
+		api.GET("/portfolios/:id/dashboard", dh.Get)
 		api.GET("/fx/:from/:to", fh.Get)
 	}
 

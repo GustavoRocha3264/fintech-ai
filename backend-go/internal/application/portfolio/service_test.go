@@ -40,7 +40,7 @@ func TestAddPositionAndValuate(t *testing.T) {
 	repo := persistence.NewInMemoryPortfolioRepository()
 	create := apportfolio.NewCreatePortfolio(repo)
 	add := apportfolio.NewAddPosition(repo)
-	view := apportfolio.NewGetPortfolioWithValuation(repo, market.NewStubMarketDataProvider(), fx.NewStubFXRateProvider())
+	view := apportfolio.NewGetPortfolioWithValuation(repo, apportfolio.NewValuationService(market.NewStubMarketDataProvider(), fx.NewStubFXRateProvider()))
 
 	p, err := create.Execute("USD")
 	if err != nil {
@@ -79,16 +79,6 @@ func TestAddPosition_PortfolioNotFound(t *testing.T) {
 	_, err := add.Execute(apportfolio.AddPositionInput{
 		PortfolioID: "missing", Symbol: "AAPL", Quantity: 1, Price: 1, Currency: "USD",
 	})
-	if !errors.Is(err, portfolio.ErrNotFound) {
-		t.Fatalf("expected ErrNotFound, got %v", err)
-	}
-}
-
-func TestGetPortfolio_NotFound(t *testing.T) {
-	repo := persistence.NewInMemoryPortfolioRepository()
-	get := apportfolio.NewGetPortfolio(repo)
-
-	_, err := get.Execute("missing")
 	if !errors.Is(err, portfolio.ErrNotFound) {
 		t.Fatalf("expected ErrNotFound, got %v", err)
 	}

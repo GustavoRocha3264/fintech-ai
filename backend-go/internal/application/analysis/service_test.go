@@ -13,16 +13,19 @@ import (
 	"github.com/fintech/cbpi/backend-go/internal/infrastructure/persistence"
 )
 
+func newValuation() apportfolio.ValuationService {
+	return apportfolio.NewValuationService(market.NewStubMarketDataProvider(), fx.NewStubFXRateProvider())
+}
+
 func TestRunAnalysis_GeneratesReportAndStoresIt(t *testing.T) {
 	portRepo := persistence.NewInMemoryPortfolioRepository()
 	analysisRepo := persistence.NewInMemoryAnalysisRepository()
 	snapshotRepo := persistence.NewInMemorySnapshotRepository()
-	marketProv := market.NewStubMarketDataProvider()
-	fxProv := fx.NewStubFXRateProvider()
+	val := newValuation()
 
 	create := apportfolio.NewCreatePortfolio(portRepo)
 	add := apportfolio.NewAddPosition(portRepo)
-	run := apanalysis.NewRunAnalysis(portRepo, analysisRepo, snapshotRepo, marketProv, fxProv)
+	run := apanalysis.NewRunAnalysis(portRepo, analysisRepo, snapshotRepo, val)
 	latest := apanalysis.NewGetLatestAnalysis(analysisRepo)
 
 	p, err := create.Execute("USD")
@@ -67,7 +70,7 @@ func TestRunAnalysis_PortfolioNotFound(t *testing.T) {
 	portRepo := persistence.NewInMemoryPortfolioRepository()
 	analysisRepo := persistence.NewInMemoryAnalysisRepository()
 	snapshotRepo := persistence.NewInMemorySnapshotRepository()
-	run := apanalysis.NewRunAnalysis(portRepo, analysisRepo, snapshotRepo, market.NewStubMarketDataProvider(), fx.NewStubFXRateProvider())
+	run := apanalysis.NewRunAnalysis(portRepo, analysisRepo, snapshotRepo, newValuation())
 
 	_, err := run.Execute("missing")
 	if !errors.Is(err, portfolio.ErrNotFound) {
