@@ -18,6 +18,7 @@ type Portfolio struct {
 	ID           string
 	BaseCurrency string
 	CreatedAt    time.Time
+	Positions    []Position
 }
 
 func New(baseCurrency string) (*Portfolio, error) {
@@ -28,5 +29,10 @@ func New(baseCurrency string) (*Portfolio, error) {
 		ID:           uuid.NewString(),
 		BaseCurrency: baseCurrency,
 		CreatedAt:    time.Now().UTC(),
+		Positions:    []Position{},
 	}, nil
+}
+
+func (p *Portfolio) AddPosition(pos Position) {
+	p.Positions = append(p.Positions, pos)
 }
