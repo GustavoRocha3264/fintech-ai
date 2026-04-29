@@ -1,6 +1,6 @@
-import type { AnalysisResponse } from '../types/domain';
+import type { AnalysisReport } from '../domain/models';
 
-export function ReportPanel({ report }: { report: AnalysisResponse | null }) {
+export function ReportPanel({ report }: { report: AnalysisReport | null }) {
   if (!report) return <p>No report yet.</p>;
   return (
     <section style={{ marginTop: 24 }}>

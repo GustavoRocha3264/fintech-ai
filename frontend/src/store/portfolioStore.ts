@@ -1,10 +1,10 @@
 import { create } from 'zustand';
-import type { AnalysisResponse, PortfolioResponse } from '../types/domain';
+import type { AnalysisReport, Portfolio } from '../domain/models';
 import { api } from '../services/api';
 
 interface PortfolioState {
-  current: PortfolioResponse | null;
-  report: AnalysisResponse | null;
+  current: Portfolio | null;
+  report: AnalysisReport | null;
   loading: boolean;
   error: string | null;
   load: (id: string) => Promise<void>;

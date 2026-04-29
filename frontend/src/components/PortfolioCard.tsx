@@ -1,6 +1,6 @@
-import type { PortfolioResponse } from '../types/domain';
+import type { Portfolio } from '../domain/models';
 
-export function PortfolioCard({ portfolio }: { portfolio: PortfolioResponse }) {
+export function PortfolioCard({ portfolio }: { portfolio: Portfolio }) {
   return (
     <section style={{ border: '1px solid #ddd', padding: 16, borderRadius: 8 }}>
       <h2>Portfolio {portfolio.id}</h2>
