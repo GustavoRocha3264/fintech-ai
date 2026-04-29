@@ -1,18 +1,23 @@
-import type { Report } from '../types/domain';
+import type { AnalysisResponse } from '../types/domain';
 
-export function ReportPanel({ report }: { report: Report | null }) {
+export function ReportPanel({ report }: { report: AnalysisResponse | null }) {
   if (!report) return <p>No report yet.</p>;
   return (
     <section style={{ marginTop: 24 }}>
       <h3>Latest report</h3>
-      <p>Generated: {report.generatedAt}</p>
+      <p>Generated: {report.createdAt}</p>
       <ul>
-        <li>Volatility: {report.risk.volatility}</li>
-        <li>Beta: {report.risk.beta}</li>
-        <li>VaR 95: {report.risk.var95}</li>
-        <li>Sharpe: {report.risk.sharpe}</li>
+        <li>Total BRL: {report.totalValueBRL}</li>
+        <li>Total USD: {report.totalValueUSD}</li>
+        <li>BRL exposure: {report.brlExposurePercent}%</li>
+        <li>USD exposure: {report.usdExposurePercent}%</li>
+        <li>Top asset concentration: {report.topAssetConcentrationPercent}%</li>
       </ul>
-      <p>{report.narrative}</p>
+      <ul>
+        {report.insights.map((insight) => (
+          <li key={insight}>{insight}</li>
+        ))}
+      </ul>
     </section>
   );
 }

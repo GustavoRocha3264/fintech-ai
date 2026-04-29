@@ -1,4 +1,10 @@
-import type { Portfolio, Report, Currency } from '../types/domain';
+import type {
+  AnalysisResponse,
+  CreatePortfolioRequest,
+  DashboardResponse,
+  PortfolioResponse,
+  PortfolioWithValuationResponse,
+} from '../types/domain';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080/api/v1';
 
@@ -12,19 +18,24 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  createPortfolio(input: { ownerId: string; name: string; baseCurrency: Currency }) {
-    return http<Portfolio>('/portfolio', { method: 'POST', body: JSON.stringify(input) });
+  createPortfolio(input: CreatePortfolioRequest) {
+    return http<PortfolioResponse>('/portfolios', { method: 'POST', body: JSON.stringify(input) });
   },
   getPortfolio(id: string) {
-    return http<Portfolio>(`/portfolio/${id}`);
+    return http<PortfolioResponse>(`/portfolios/${id}`);
+  },
+  getPortfolioWithValuation(id: string) {
+    return http<PortfolioWithValuationResponse>(`/portfolios/${id}/valuation`);
+  },
+  getDashboard(id: string) {
+    return http<DashboardResponse>(`/portfolios/${id}/dashboard`);
   },
   runAnalysis(portfolioId: string) {
-    return http<Report>('/analysis/run', {
+    return http<AnalysisResponse>(`/portfolios/${portfolioId}/analysis`, {
       method: 'POST',
-      body: JSON.stringify({ portfolioId }),
     });
   },
   getLatestReport(portfolioId: string) {
-    return http<Report>(`/analysis/${portfolioId}`);
+    return http<AnalysisResponse>(`/portfolios/${portfolioId}/analysis/latest`);
   },
 };
