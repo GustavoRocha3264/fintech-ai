@@ -1,6 +1,7 @@
 package dashboard_test
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/fintech/cbpi/backend-go/internal/infrastructure/fx"
 	"github.com/fintech/cbpi/backend-go/internal/infrastructure/market"
 	"github.com/fintech/cbpi/backend-go/internal/infrastructure/persistence"
+	infrauow "github.com/fintech/cbpi/backend-go/internal/infrastructure/uow"
 )
 
 type fixture struct {
@@ -32,9 +34,10 @@ func newFixture() fixture {
 
 func TestDashboard_FullyPopulatedAfterAnalysis(t *testing.T) {
 	f := newFixture()
+	uow := infrauow.NewInMemoryUoW(f.portRepo, f.analysisRepo, f.snapshotRepo)
 	create := apportfolio.NewCreatePortfolio(f.portRepo)
 	add := apportfolio.NewAddPosition(f.portRepo)
-	run := apanalysis.NewRunAnalysis(f.portRepo, f.analysisRepo, f.snapshotRepo, f.val)
+	run := apanalysis.NewRunAnalysis(uow, f.val)
 	get := dashboard.NewGetDashboard(f.portRepo, f.val, f.analysisRepo, f.snapshotRepo, f.fx)
 
 	p, err := create.Execute("USD")
@@ -46,7 +49,7 @@ func TestDashboard_FullyPopulatedAfterAnalysis(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("add: %v", err)
 	}
-	if _, err := run.Execute(p.ID); err != nil {
+	if _, err := run.Execute(context.Background(), p.ID); err != nil {
 		t.Fatalf("run: %v", err)
 	}
 
