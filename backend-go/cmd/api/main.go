@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	apanalysis "github.com/fintech/cbpi/backend-go/internal/application/analysis"
 	apportfolio "github.com/fintech/cbpi/backend-go/internal/application/portfolio"
 	"github.com/fintech/cbpi/backend-go/internal/infrastructure/fx"
 	"github.com/fintech/cbpi/backend-go/internal/infrastructure/market"
@@ -20,19 +21,24 @@ import (
 func main() {
 	addr := envOr("HTTP_ADDR", ":8080")
 
-	repo := persistence.NewInMemoryPortfolioRepository()
+	portfolioRepo := persistence.NewInMemoryPortfolioRepository()
+	analysisRepo := persistence.NewInMemoryAnalysisRepository()
 	marketProvider := market.NewStubMarketDataProvider()
 	fxProvider := fx.NewStubFXRateProvider()
 
-	createUC := apportfolio.NewCreatePortfolio(repo)
-	getUC := apportfolio.NewGetPortfolio(repo)
-	addPosUC := apportfolio.NewAddPosition(repo)
-	getValuedUC := apportfolio.NewGetPortfolioWithValuation(repo, marketProvider, fxProvider)
-	handler := handlers.NewPortfolioHandler(createUC, getUC, addPosUC, getValuedUC)
+	createUC := apportfolio.NewCreatePortfolio(portfolioRepo)
+	getUC := apportfolio.NewGetPortfolio(portfolioRepo)
+	addPosUC := apportfolio.NewAddPosition(portfolioRepo)
+	getValuedUC := apportfolio.NewGetPortfolioWithValuation(portfolioRepo, marketProvider, fxProvider)
+	runAnalysisUC := apanalysis.NewRunAnalysis(portfolioRepo, analysisRepo, marketProvider, fxProvider)
+	latestAnalysisUC := apanalysis.NewGetLatestAnalysis(analysisRepo)
+
+	portfolioHandler := handlers.NewPortfolioHandler(createUC, getUC, addPosUC, getValuedUC)
+	analysisHandler := handlers.NewAnalysisHandler(runAnalysisUC, latestAnalysisUC)
 
 	srv := &http.Server{
 		Addr:              addr,
-		Handler:           httpiface.NewRouter(handler),
+		Handler:           httpiface.NewRouter(portfolioHandler, analysisHandler),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
