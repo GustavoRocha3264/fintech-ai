@@ -175,6 +175,18 @@ func NewFXResponse(from, to string, rate float64) FXResponse {
 	return FXResponse{From: from, To: to, Rate: rate}
 }
 
+type MarketSymbolResponse struct {
+	Ticker   string `json:"ticker"`
+	Currency string `json:"currency"`
+	Name     string `json:"name"`
+}
+
+type MarketQuoteResponse struct {
+	Symbol   string  `json:"symbol"`
+	Price    float64 `json:"price"`
+	Currency string  `json:"currency"`
+}
+
 func NewDashboardResponse(d *appdashboard.Dashboard) DashboardResponse {
 	var report *AnalysisResponse
 	if d.LatestReport != nil {

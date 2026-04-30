@@ -28,6 +28,7 @@ func NewRouter(
 	sh *handlers.SnapshotHandler,
 	fh *handlers.FXHandler,
 	dh *handlers.DashboardHandler,
+	mh *handlers.MarketHandler,
 ) http.Handler {
 	r := gin.New()
 	r.Use(gin.Recovery(), gin.Logger(), corsMiddleware())
@@ -45,6 +46,8 @@ func NewRouter(
 		api.GET("/portfolios/:id/snapshots", sh.History)
 		api.GET("/portfolios/:id/dashboard", dh.Get)
 		api.GET("/fx/:from/:to", fh.Get)
+		api.GET("/market/symbols", mh.GetSymbols)
+		api.GET("/market/quote/:symbol", mh.GetQuote)
 	}
 
 	return r
