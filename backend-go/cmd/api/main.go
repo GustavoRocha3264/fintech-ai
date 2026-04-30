@@ -34,8 +34,14 @@ func main() {
 	databaseURL := os.Getenv("DATABASE_URL")
 	fxAPIURL := envOr("FX_API_URL", "https://open.er-api.com/v6/latest")
 	fxTTL := envDurationOr("FX_CACHE_TTL", 5*time.Minute)
+	marketAPIURL := envOr("MARKET_API_URL", "https://brapi.dev/api/quote")
+	marketTTL := envDurationOr("MARKET_CACHE_TTL", time.Minute)
+	marketToken := os.Getenv("BRAPI_TOKEN")
 
-	marketProvider := market.NewStubMarketDataProvider()
+	marketProvider := market.NewFallback(
+		market.NewHTTPProvider(marketAPIURL, marketTTL, marketToken),
+		market.NewStubMarketDataProvider(),
+	)
 	fxProvider := fx.NewFallback(
 		fx.NewHTTPProvider(fxAPIURL, fxTTL),
 		fx.NewStubFXRateProvider(),
@@ -59,10 +65,11 @@ func main() {
 	snapshotHandler := handlers.NewSnapshotHandler(historyUC)
 	fxHandler := handlers.NewFXHandler(fxProvider)
 	dashboardHandler := handlers.NewDashboardHandler(dashboardUC)
+	marketHandler := handlers.NewMarketHandler(marketProvider)
 
 	srv := &http.Server{
 		Addr:              addr,
-		Handler:           httpiface.NewRouter(portfolioHandler, analysisHandler, snapshotHandler, fxHandler, dashboardHandler),
+		Handler:           httpiface.NewRouter(portfolioHandler, analysisHandler, snapshotHandler, fxHandler, dashboardHandler, marketHandler),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
