@@ -4,6 +4,8 @@ import type {
   CreatePortfolioInput,
   Dashboard,
   FXRate,
+  MarketQuote,
+  MarketSymbol,
   Money,
   Portfolio,
   PortfolioSnapshot,
@@ -17,6 +19,8 @@ import type {
   CreatePortfolioRequestDto,
   DashboardResponseDto,
   FXResponseDto,
+  MarketQuoteDto,
+  MarketSymbolDto,
   MoneyResponseDto,
   PortfolioResponseDto,
   PortfolioWithValuationResponseDto,
@@ -110,6 +114,14 @@ export function toFXRate(dto: FXResponseDto): FXRate {
     to: dto.to,
     rate: dto.rate,
   };
+}
+
+export function toMarketSymbol(dto: MarketSymbolDto): MarketSymbol {
+  return { ticker: dto.ticker, currency: dto.currency, name: dto.name };
+}
+
+export function toMarketQuote(dto: MarketQuoteDto): MarketQuote {
+  return { symbol: dto.symbol, price: dto.price, currency: dto.currency };
 }
 
 export function toDashboard(dto: DashboardResponseDto): Dashboard {

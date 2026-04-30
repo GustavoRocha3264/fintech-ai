@@ -2,29 +2,41 @@ import type { AnalysisReport } from '../domain/models';
 
 export function InsightsPanel({ report }: { report: AnalysisReport | null }) {
   if (!report) {
-    return (
-      <section style={{ marginTop: 16, border: '1px dashed #ccc', padding: 16, borderRadius: 8 }}>
-        <h3 style={{ marginTop: 0 }}>Insights</h3>
-        <p style={{ color: '#888' }}>No analysis yet — run one to generate insights.</p>
-      </section>
-    );
+    return <div className="empty">No analysis yet — click <strong>Run analysis</strong> to generate insights.</div>;
   }
+
+  const generated = new Date(report.createdAt);
+
   return (
-    <section style={{ marginTop: 16, border: '1px solid #ddd', padding: 16, borderRadius: 8 }}>
-      <h3 style={{ marginTop: 0 }}>Insights</h3>
-      <div style={{ fontSize: 12, color: '#666', marginBottom: 8 }}>
-        Generated {new Date(report.createdAt).toLocaleString()} · Top concentration{' '}
-        {report.topAssetConcentrationPercent.toFixed(1)}%
+    <div>
+      <div className="metric-grid" style={{ marginBottom: 16 }}>
+        <div>
+          <div className="metric-label">Top concentration</div>
+          <div className="metric-value">{report.topAssetConcentrationPercent.toFixed(1)}%</div>
+        </div>
+        <div>
+          <div className="metric-label">Generated</div>
+          <div className="metric-value" style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-muted)' }}>
+            {generated.toLocaleString()}
+          </div>
+        </div>
       </div>
+
       {report.insights.length === 0 ? (
-        <p style={{ color: '#3a7' }}>Portfolio looks balanced — no flags raised.</p>
+        <div className="insight-good">
+          <span aria-hidden>✓</span>
+          <span>Portfolio looks balanced — no flags raised.</span>
+        </div>
       ) : (
-        <ul>
+        <ul className="insight-list">
           {report.insights.map((line, i) => (
-            <li key={i}>{line}</li>
+            <li key={i} className="insight-item">
+              <span className="insight-icon" aria-hidden>!</span>
+              <span>{line}</span>
+            </li>
           ))}
         </ul>
       )}
-    </section>
+    </div>
   );
 }

@@ -81,3 +81,15 @@ export interface AddPositionInput {
   price: number;
   currency: Currency;
 }
+
+export interface MarketSymbol {
+  ticker: string;
+  currency: Currency;
+  name: string;
+}
+
+export interface MarketQuote {
+  symbol: string;
+  price: number;
+  currency: Currency;
+}

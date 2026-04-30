@@ -3,6 +3,8 @@ import type {
   AnalysisReport,
   CreatePortfolioInput,
   Dashboard,
+  MarketQuote,
+  MarketSymbol,
   Portfolio,
   PortfolioSnapshot,
   PortfolioWithValuation,
@@ -12,6 +14,8 @@ import type {
   AnalysisResponseDto,
   CreatePortfolioRequestDto,
   DashboardResponseDto,
+  MarketQuoteDto,
+  MarketSymbolDto,
   PortfolioResponseDto,
   PortfolioWithValuationResponseDto,
   PositionResponseDto,
@@ -22,6 +26,8 @@ import {
   toAnalysisReport,
   toCreatePortfolioRequestDto,
   toDashboard,
+  toMarketQuote,
+  toMarketSymbol,
   toPortfolio,
   toPortfolioSnapshot,
   toPortfolioWithValuation,
@@ -29,6 +35,15 @@ import {
 } from './api/mappers';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080/api/v1';
+
+export class ApiError extends Error {
+  status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+  }
+}
 
 async function http<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
@@ -44,7 +59,7 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
     } catch {
       if (body) message = body;
     }
-    throw new Error(message);
+    throw new ApiError(res.status, message);
   }
   return res.json() as Promise<T>;
 }
@@ -90,5 +105,13 @@ export const api = {
   async getSnapshots(portfolioId: string): Promise<PortfolioSnapshot[]> {
     const response = await http<SnapshotResponseDto[]>(`/portfolios/${portfolioId}/snapshots`);
     return response.map(toPortfolioSnapshot);
+  },
+  async getMarketSymbols(): Promise<MarketSymbol[]> {
+    const response = await http<MarketSymbolDto[]>('/market/symbols');
+    return response.map(toMarketSymbol);
+  },
+  async getMarketQuote(symbol: string): Promise<MarketQuote> {
+    const response = await http<MarketQuoteDto>(`/market/quote/${encodeURIComponent(symbol)}`);
+    return toMarketQuote(response);
   },
 };
