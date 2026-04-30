@@ -18,45 +18,46 @@ export function DashboardPage() {
     loadDashboard,
     addPosition,
     runAnalysis,
-    reset,
   } = usePortfolioStore();
 
+  // Fetch the dashboard once per portfolio change. We intentionally exclude
+  // `loading` and `error` from deps so a failed fetch doesn't auto-retry in a
+  // loop — the user can press "Switch portfolio" or fix the problem and the
+  // next portfolioId change will trigger a new attempt.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (portfolioId && !dashboard && !loading) {
+    if (portfolioId && !dashboard) {
       void loadDashboard();
     }
-  }, [portfolioId, dashboard, loading, loadDashboard]);
+  }, [portfolioId]);
 
   return (
-    <main style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 820, margin: '40px auto', padding: '0 16px' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1 style={{ margin: 0 }}>Cross-Border Portfolio Intelligence</h1>
-        {portfolioId && (
-          <button onClick={reset} style={{ fontSize: 12 }}>
-            Switch portfolio
-          </button>
-        )}
-      </header>
-
-      {error && (
-        <p style={{ color: 'crimson', background: '#fee', padding: 8, borderRadius: 4, marginTop: 16 }}>
-          {error}
-        </p>
-      )}
+    <main className="app-main">
+      {error && <div className="banner error">{error}</div>}
 
       {!portfolioId && <CreatePortfolioForm onSubmit={createPortfolio} busy={busy} />}
 
-      {portfolioId && !dashboard && loading && <p>Loading dashboard…</p>}
+      {portfolioId && !dashboard && loading && (
+        <div className="card">
+          <div className="actions">
+            <span className="spinner" />
+            <span className="hint">Loading dashboard…</span>
+          </div>
+        </div>
+      )}
 
       {dashboard && (
         <>
-          <section style={{ marginTop: 16, border: '1px solid #ddd', padding: 16, borderRadius: 8 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-              <h2 style={{ margin: 0 }}>Portfolio</h2>
-              <span style={{ fontSize: 12, color: '#666' }}>
-                {dashboard.portfolio.id} · base {dashboard.portfolio.baseCurrency} · 1 USD ={' '}
-                {dashboard.fx.usdToBRL.toFixed(4)} BRL
-              </span>
+          <section className="card">
+            <div className="card-header">
+              <div>
+                <div className="card-title">Portfolio</div>
+                <div className="hint">
+                  Base currency <strong>{dashboard.portfolio.baseCurrency}</strong> · 1 USD ={' '}
+                  {dashboard.fx.usdToBRL.toFixed(4)} BRL
+                </div>
+              </div>
+              <div className="card-subtitle">{dashboard.portfolio.id.slice(0, 8)}…</div>
             </div>
             <PositionsTable positions={dashboard.portfolio.positions} />
             <AddPositionForm onSubmit={addPosition} busy={busy} />
@@ -64,13 +65,26 @@ export function DashboardPage() {
 
           <ValuationPanel valuation={dashboard.valuation} />
 
-          <div style={{ marginTop: 16 }}>
-            <button onClick={runAnalysis} disabled={busy || dashboard.portfolio.positions.length === 0}>
-              {busy ? 'Working…' : 'Run analysis'}
-            </button>
-          </div>
+          <section className="card">
+            <div className="card-header">
+              <div className="card-title">Analysis</div>
+              <button
+                className="primary"
+                onClick={runAnalysis}
+                disabled={busy || dashboard.portfolio.positions.length === 0}
+              >
+                {busy ? (
+                  <span className="actions">
+                    <span className="spinner" /> Running…
+                  </span>
+                ) : (
+                  'Run analysis'
+                )}
+              </button>
+            </div>
+            <InsightsPanel report={dashboard.latestReport} />
+          </section>
 
-          <InsightsPanel report={dashboard.latestReport} />
           <SnapshotsChart snapshots={dashboard.snapshots} />
         </>
       )}

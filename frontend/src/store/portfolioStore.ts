@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { AddPositionInput, Currency, Dashboard } from '../domain/models';
-import { api } from '../services/api';
+import { ApiError, api } from '../services/api';
 
 const STORAGE_KEY = 'cbpi.portfolioId';
 
@@ -62,6 +62,19 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
       const dashboard = await api.getDashboard(targetId);
       set({ dashboard, loading: false });
     } catch (e) {
+      // A 404 means the persisted portfolio no longer exists on the server
+      // (e.g. backend was restarted with a fresh in-memory store). Drop the
+      // stale ID so the create form re-appears, instead of looping forever.
+      if (e instanceof ApiError && e.status === 404) {
+        persist(null);
+        set({
+          portfolioId: null,
+          dashboard: null,
+          loading: false,
+          error: 'Previous portfolio no longer exists. Create a new one to continue.',
+        });
+        return;
+      }
       set({ error: (e as Error).message, loading: false });
     }
   },

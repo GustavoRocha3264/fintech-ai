@@ -81,3 +81,15 @@ export interface AddPositionRequestDto {
   price: number;
   currency: Currency;
 }
+
+export interface MarketSymbolDto {
+  ticker: string;
+  currency: Currency;
+  name: string;
+}
+
+export interface MarketQuoteDto {
+  symbol: string;
+  price: number;
+  currency: Currency;
+}
