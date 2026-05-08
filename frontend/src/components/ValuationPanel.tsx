@@ -1,37 +1,54 @@
 import type { Valuation } from '../domain/models';
 
 const fmt = (n: number, currency: string) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 2 }).format(n);
+  new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: 2,
+  }).format(n);
 
 export function ValuationPanel({ valuation }: { valuation: Valuation }) {
   const { totalBRL, totalUSD, percentInBRL, percentInUSD } = valuation;
+  const brlWidth = Math.max(0, Math.min(100, percentInBRL));
+  const usdWidth = Math.max(0, Math.min(100, percentInUSD));
+
   return (
-    <section style={{ marginTop: 16, border: '1px solid #ddd', padding: 16, borderRadius: 8 }}>
-      <h3 style={{ marginTop: 0 }}>Valuation</h3>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+    <section className="card">
+      <div className="card-header">
+        <div className="card-title">Valuation</div>
+        <span className="card-subtitle">Live</span>
+      </div>
+
+      <div className="metric-grid">
         <div>
-          <div style={{ fontSize: 12, color: '#666' }}>Total BRL</div>
-          <div style={{ fontSize: 20, fontWeight: 600 }}>{fmt(totalBRL.amount, 'BRL')}</div>
+          <div className="metric-label">Total in BRL</div>
+          <div className="metric-value" style={{ color: 'var(--brl)' }}>
+            {fmt(totalBRL.amount, 'BRL')}
+          </div>
         </div>
         <div>
-          <div style={{ fontSize: 12, color: '#666' }}>Total USD</div>
-          <div style={{ fontSize: 20, fontWeight: 600 }}>{fmt(totalUSD.amount, 'USD')}</div>
+          <div className="metric-label">Total in USD</div>
+          <div className="metric-value" style={{ color: 'var(--usd)' }}>
+            {fmt(totalUSD.amount, 'USD')}
+          </div>
         </div>
       </div>
-      <div style={{ marginTop: 12 }}>
-        <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>Allocation</div>
-        <div style={{ display: 'flex', height: 12, borderRadius: 6, overflow: 'hidden', background: '#eee' }}>
-          <div
-            style={{ width: `${percentInBRL}%`, background: '#4f8' }}
-            title={`BRL ${percentInBRL.toFixed(1)}%`}
-          />
-          <div
-            style={{ width: `${percentInUSD}%`, background: '#48f' }}
-            title={`USD ${percentInUSD.toFixed(1)}%`}
-          />
+
+      <div style={{ marginTop: 20 }}>
+        <div className="metric-label">Currency allocation</div>
+        <div className="alloc-bar" role="img" aria-label={`BRL ${brlWidth.toFixed(0)}%, USD ${usdWidth.toFixed(0)}%`}>
+          {brlWidth > 0 && <div className="alloc-bar-brl" style={{ width: `${brlWidth}%` }} />}
+          {usdWidth > 0 && <div className="alloc-bar-usd" style={{ width: `${usdWidth}%` }} />}
         </div>
-        <div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
-          BRL {percentInBRL.toFixed(1)}% · USD {percentInUSD.toFixed(1)}%
+        <div className="alloc-legend">
+          <span className="alloc-legend-item">
+            <span className="alloc-legend-dot" style={{ background: 'var(--brl)' }} />
+            BRL {percentInBRL.toFixed(1)}%
+          </span>
+          <span className="alloc-legend-item">
+            <span className="alloc-legend-dot" style={{ background: 'var(--usd)' }} />
+            USD {percentInUSD.toFixed(1)}%
+          </span>
         </div>
       </div>
     </section>
