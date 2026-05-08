@@ -1,43 +1,59 @@
-"""Chat use case.
+from app.services.llm_client import ChatMessage, CompletionResult, LLMClient
+from app.services.wiki_reader import WikiReader
 
-Slice 1 keeps the system prompt static. Slice 3 (`feat(ai)/query-pipeline`)
-will replace `_DEFAULT_SYSTEM` with the wiki index and per-question page
-selection logic.
-"""
-from __future__ import annotations
+SYSTEM_PROMPT_PT = """\
+Você é o assistente de investimento internacional da plataforma CBPI
+(Cross-Border Portfolio Intelligence). Seu público é um investidor brasileiro
+que mantém posições em BRL e USD e quer entender exposição cambial,
+diversificação e implicações tributárias (IRRF, PFIC) ao investir lá fora.
 
-from app.schemas.chat import ChatMessageDto, ChatResponse, UsageDto
-from app.services.llm_client import ChatMessage, LLMClient
-
-
-_DEFAULT_SYSTEM = """\
-You are CBPI, an assistant specialized in cross-border investing for users \
-holding portfolios in BRL and USD. Answer in Portuguese unless the user \
-writes in another language. Be precise about jurisdictions: distinguish \
-Brazilian (Receita Federal, B3, IRRF) and US (IRS, NYSE/NASDAQ, PFIC) rules \
-when they apply. Always include a brief disclaimer that responses are \
-informational, not personalized investment advice. Do not invent regulations, \
-tickers, or rates — if you do not know, say so.\
+Princípios:
+1. Responda em português do Brasil, claro e direto.
+2. Baseie-se EXCLUSIVAMENTE no conteúdo da wiki abaixo. Quando faltar
+   informação na wiki, diga isso explicitamente em vez de inventar.
+3. Cite as páginas da wiki que você usou no formato [[categoria/slug]] no fim
+   da resposta.
+4. Sempre encerre com a linha de aviso:
+   "Este conteúdo é educacional e não constitui recomendação de investimento."
 """
 
 
 class ChatService:
-    def __init__(self, llm: LLMClient) -> None:
+    """Wiki-grounded chat. The wiki index + schema are sent as a cached system
+    block; concrete page bodies are pulled in when the user message references
+    them by slug. Index-first retrieval, no embeddings.
+    """
+
+    def __init__(self, *, llm: LLMClient, wiki: WikiReader) -> None:
         self._llm = llm
+        self._wiki = wiki
 
-    async def reply(self, messages: list[ChatMessageDto]) -> ChatResponse:
-        domain_messages = [ChatMessage(role=m.role, content=m.content) for m in messages]
-        result = await self._llm.complete(domain_messages, system=_DEFAULT_SYSTEM)
+    async def answer(self, messages: list[ChatMessage]) -> tuple[CompletionResult, list[str]]:
+        cited = self._select_pages(messages[-1].content if messages else "")
+        system = self._build_system(cited)
+        result = await self._llm.complete(messages, system=system)
+        return result, cited
 
-        return ChatResponse(
-            answer=result.text,
-            citations=[],  # Populated in Slice 3 once the wiki query pipeline lands.
-            usage=UsageDto(
-                input_tokens=result.usage.input_tokens,
-                output_tokens=result.usage.output_tokens,
-                cache_read_input_tokens=result.usage.cache_read_input_tokens,
-                cache_creation_input_tokens=result.usage.cache_creation_input_tokens,
-            ),
-            model=result.model,
-            stop_reason=result.stop_reason,
-        )
+    def _build_system(self, cited: list[str]) -> str:
+        parts = [SYSTEM_PROMPT_PT, "\n\n# Wiki schema\n", self._wiki.read_schema()]
+        parts.append("\n\n# Wiki index\n")
+        parts.append(self._wiki.read_index() or "(empty)")
+        if cited:
+            parts.append("\n\n# Wiki pages relevant to the current question\n")
+            for rel in cited:
+                page = self._wiki.read_page(rel)
+                if page is None:
+                    continue
+                parts.append(f"\n## [[{rel.removesuffix('.md')}]]\n{page.body}\n")
+        return "".join(parts)
+
+    def _select_pages(self, query: str) -> list[str]:
+        if not query:
+            return []
+        q = query.lower()
+        hits: list[str] = []
+        for rel in self._wiki.list_pages():
+            slug = rel.removesuffix(".md").split("/", 1)[1].lower()
+            if slug in q or slug.replace("-", " ") in q:
+                hits.append(rel)
+        return hits[:6]

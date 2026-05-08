@@ -1,10 +1,6 @@
-"""Pydantic schemas for the /v1/chat endpoint."""
-from __future__ import annotations
-
 from typing import Literal
 
 from pydantic import BaseModel, Field
-
 
 Role = Literal["user", "assistant"]
 
@@ -19,24 +15,16 @@ class ChatRequest(BaseModel):
     messages: list[ChatMessageDto] = Field(min_length=1)
 
 
-class CitationDto(BaseModel):
-    """Citation pointer — populated by the query pipeline in a later slice."""
-
-    slug: str
-    title: str
-    anchor: str | None = None
-
-
-class UsageDto(BaseModel):
-    input_tokens: int
-    output_tokens: int
+class TokenUsageDto(BaseModel):
+    input_tokens: int = 0
+    output_tokens: int = 0
     cache_read_input_tokens: int = 0
     cache_creation_input_tokens: int = 0
 
 
 class ChatResponse(BaseModel):
     answer: str
-    citations: list[CitationDto] = Field(default_factory=list)
-    usage: UsageDto
+    citations: list[str] = []
     model: str
-    stop_reason: str
+    stop_reason: str | None = None
+    usage: TokenUsageDto
